@@ -1,0 +1,86 @@
+# -*- coding: utf-8 -*-
+
+import pandas as pd, numpy as np
+from sklearn.linear_model import LogisticRegression
+from sklearn.preprocessing import StandardScaler
+from sklearn.pipeline import Pipeline
+from sklearn.metrics import accuracy_score
+
+# Carregando os datasets (iguais do trabalho da árvore de classificação)
+train = pd.read_csv('C:\\Users\\rafael.tieppo\\OneDrive - Pharmainox\\Área de Trabalho\\Diabetes_ArvoreClassificacao\\train_diabetes.csv')
+test  = pd.read_csv('C:\\Users\\rafael.tieppo\\OneDrive - Pharmainox\\Área de Trabalho\\Diabetes_ArvoreClassificacao\\test_diabetes.csv')
+
+# Substituir colunas com 0 por NaN e depois pela mediana
+cols_com_zero = ['GLICOSE','PRESSAO_ARTERIAL','ESPESSURA_PELE','INSULINA','IMC']
+for col in cols_com_zero:
+    train[col].replace(0,np.nan,inplace=True)
+    test[col].replace(0,np.nan,inplace=True)
+    med = train[col].median()
+    train[col].fillna(med,inplace=True)
+    test[col].fillna(med,inplace=True)
+
+# Separar features (X) e target (y)
+X_train = train.drop(['ID_PACIENTE','NOME','RESULTADO'], axis=1)
+y_train = train['RESULTADO']
+X_test  = test .drop(['ID_PACIENTE','NOME','RESULTADO'], axis=1)
+y_test  = test ['RESULTADO']
+
+# Converter 'SEXO' para 0 ou 1
+X_train['SEXO'] = X_train['SEXO'].map({'Feminino':0,'Masculino':1})
+X_test ['SEXO'] = X_test ['SEXO'].map({'Feminino':0,'Masculino':1})
+
+# Usei StandardScaler + LogisticRegression porque ele tem uma acurácia maior que usando MLP
+logreg = Pipeline([
+    ('scaler', StandardScaler()),
+    ('clf', LogisticRegression(
+        penalty='l2',
+        max_iter=5000, 
+        class_weight='balanced',
+        random_state=42))
+])
+
+# Criando a rede
+# mlp = MLPClassifier(
+#     solver='adam',
+#     activation='relu',  # sigmoid
+#     hidden_layer_sizes=(200, 150, 50),  # 3 camadas ocultas
+#     random_state=42,
+#     max_iter=2000,
+#     alpha=0.01
+# )
+
+print("\nTreinando Regressão Logística...")
+logreg.fit(X_train, y_train)
+
+# Avaliação
+y_pred = logreg.predict(X_test)
+print(f"\nAcurácia na base de teste: {accuracy_score(y_test, y_pred):.2%}")
+
+# Sistema de predição de diabetes
+print("\nSISTEMA DE PREDIÇÃO DE DIABETES (Digite os dados do paciente):")
+while True:
+    try:
+        print("\n" + "="*50)
+        nome  = input("Digite seu nome: ")
+        sexo  = input("Sexo (Feminino/Masculino): ").strip().capitalize()
+        idade = float(input("Idade: "))
+        glic  = float(input("Glicose: "))
+        press = float(input("Pressão arterial: "))
+        pele  = float(input("Espessura da pele: "))
+        insu  = float(input("Insulina: "))
+        imc   = float(input("IMC: "))
+
+        sexo_num = 0 if sexo == 'Feminino' else 1
+        paciente = np.array([[sexo_num, idade, imc, glic, press, pele, insu]])
+
+        prob = logreg.predict_proba(paciente)[0][1]
+        pred = logreg.predict(paciente)[0]
+
+        print("\nRESULTADO:")
+        print(f"Probabilidade de diabetes de {nome}: {prob:.2%}")
+        print("Diagnóstico:", "DIABÉTICO" if pred == 1 else "NÃO DIABÉTICO")
+
+        if input("\nDeseja testar outro paciente? (s/n): ").lower() != 's':
+            break
+    except Exception as e:
+        print(f"Erro: {e}. Tente novamente.")

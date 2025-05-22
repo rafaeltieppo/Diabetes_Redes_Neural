@@ -1,14 +1,16 @@
 # -*- coding: utf-8 -*-
 
-import pandas as pd, numpy as np
-from sklearn.linear_model import LogisticRegression
+import pandas as pd
+import numpy as np
+from sklearn.neural_network import MLPClassifier
 from sklearn.preprocessing import StandardScaler
-from sklearn.pipeline import Pipeline
 from sklearn.metrics import accuracy_score
+from imblearn.over_sampling import SMOTE
+import re
 
 # Carregando os datasets (iguais do trabalho da árvore de classificação)
-train = pd.read_csv('C:\\Users\\rafael.tieppo\\OneDrive - Pharmainox\\Área de Trabalho\\Diabetes_ArvoreClassificacao\\train_diabetes.csv')
-test  = pd.read_csv('C:\\Users\\rafael.tieppo\\OneDrive - Pharmainox\\Área de Trabalho\\Diabetes_ArvoreClassificacao\\test_diabetes.csv')
+train = pd.read_csv('C:\\Users\\rafael.tieppo\\OneDrive - Pharmainox\\Área de Trabalho\\Diabetes_Redes_Neural\\train_diabetes.csv')
+test  = pd.read_csv('C:\\Users\\rafael.tieppo\\OneDrive - Pharmainox\\Área de Trabalho\\Diabetes_Redes_Neural\\test_diabetes.csv')
 
 # Substituir colunas com 0 por NaN e depois pela mediana
 cols_com_zero = ['GLICOSE','PRESSAO_ARTERIAL','ESPESSURA_PELE','INSULINA','IMC']
@@ -29,40 +31,42 @@ y_test  = test ['RESULTADO']
 X_train['SEXO'] = X_train['SEXO'].map({'Feminino':0,'Masculino':1})
 X_test ['SEXO'] = X_test ['SEXO'].map({'Feminino':0,'Masculino':1})
 
-# Usei StandardScaler + LogisticRegression porque ele tem uma acurácia maior que usando MLP
-logreg = Pipeline([
-    ('scaler', StandardScaler()),
-    ('clf', LogisticRegression(
-        penalty='l2',
-        max_iter=5000, 
-        class_weight='balanced',
-        random_state=42))
-])
+# Normalizar com StandardScaler
+scaler = StandardScaler()
+X_train_scaled = scaler.fit_transform(X_train)
+X_test_scaled  = scaler.transform(X_test)
 
-# Criando a rede
-# mlp = MLPClassifier(
-#     solver='adam',
-#     activation='relu',  # sigmoid
-#     hidden_layer_sizes=(200, 150, 50),  # 3 camadas ocultas
-#     random_state=42,
-#     max_iter=2000,
-#     alpha=0.01
-# )
+# Aplicar SMOTE para balancear as classes
+smote = SMOTE(random_state=42)
+X_train_res, y_train_res = smote.fit_resample(X_train_scaled, y_train)
 
-print("\nTreinando Regressão Logística...")
-logreg.fit(X_train, y_train)
+#Criando a rede. Melhor configuração que testei, atingiu 67.42% de acurácia
+mlp = MLPClassifier(
+     solver='adam',
+     activation='relu',  # sigmoid
+     hidden_layer_sizes=(200,200),  # 2 camadas ocultas
+     random_state=42,
+     #max_iter=1000,
+     alpha=0.1,
+     tol=1e-8,
+     early_stopping=True,
+ )
+
+print("\nTreinando a Rede MLP...")
+mlp.fit(X_train_res, y_train_res)
 
 # Avaliação
-y_pred = logreg.predict(X_test)
+y_pred = mlp.predict(X_test_scaled)
 print(f"\nAcurácia na base de teste: {accuracy_score(y_test, y_pred):.2%}")
 
 # Sistema de predição de diabetes
-print("\nSISTEMA DE PREDIÇÃO DE DIABETES (Digite os dados do paciente):")
+print("\nSISTEMA DE PREDIÇÃO DE DIABETES")
+print("\nDigite os dados do paciente:")
 while True:
     try:
         print("\n" + "="*50)
-        nome  = input("Digite seu nome: ")
-        sexo  = input("Sexo (Feminino/Masculino): ").strip().capitalize()
+        nome  = input("Digite seu nome: ").strip()
+        sexo = input("Sexo (Feminino/Masculino): ").strip().lower()          
         idade = float(input("Idade: "))
         glic  = float(input("Glicose: "))
         press = float(input("Pressão arterial: "))
@@ -72,15 +76,20 @@ while True:
 
         sexo_num = 0 if sexo == 'Feminino' else 1
         paciente = np.array([[sexo_num, idade, imc, glic, press, pele, insu]])
+        paciente_scaled = scaler.transform(paciente)
 
-        prob = logreg.predict_proba(paciente)[0][1]
-        pred = logreg.predict(paciente)[0]
+        prob = mlp.predict_proba(paciente_scaled)[0][1]
+        pred = mlp.predict(paciente_scaled)[0]
 
+        print("\n" + "="*50)
         print("\nRESULTADO:")
         print(f"Probabilidade de diabetes de {nome}: {prob:.2%}")
-        print("Diagnóstico:", "DIABÉTICO" if pred == 1 else "NÃO DIABÉTICO")
+        print("Diagnóstico:", "❌ DIABÉTICO" if pred == 1 else "✅ NÃO DIABÉTICO")
 
+        print("\n" + "="*50)
         if input("\nDeseja testar outro paciente? (s/n): ").lower() != 's':
+            print("Encerrando sistema.")
+            print("\n" + "="*50)
             break
     except Exception as e:
         print(f"Erro: {e}. Tente novamente.")

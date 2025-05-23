@@ -40,7 +40,7 @@ X_test_scaled  = scaler.transform(X_test)
 smote = SMOTE(random_state=42)
 X_train_res, y_train_res = smote.fit_resample(X_train_scaled, y_train)
 
-#Criando a rede. Melhor configuração que testei, atingiu 67.42% de acurácia
+#Criando a rede. Melhor configuração que testei, atingiu 79.87% de acurácia
 mlp = MLPClassifier(
      solver='adam',
      activation='relu',  # sigmoid
@@ -65,16 +65,45 @@ print("\nDigite os dados do paciente:")
 while True:
     try:
         print("\n" + "="*50)
-        nome  = input("Digite seu nome: ").strip()
-        sexo = input("Sexo (Feminino/Masculino): ").strip().lower()          
-        idade = float(input("Idade: "))
-        glic  = float(input("Glicose: "))
-        press = float(input("Pressão arterial: "))
-        pele  = float(input("Espessura da pele: "))
-        insu  = float(input("Insulina: "))
-        imc   = float(input("IMC: "))
 
-        sexo_num = 0 if sexo == 'Feminino' else 1
+        # Verificar se o dado digitado é valido (somente letras e espaços)
+        while True:
+            nome = input("Digite seu nome: ").strip()
+            if re.fullmatch(r"[A-Za-zÀ-ÿ\s'-]+", nome):
+                break
+            print("⛔ Nome inválido. Use apenas letras e espaços.")
+
+        # (feminino ou masculino f/m)
+        while True:
+            sexo_input = input("Sexo (Feminino/Masculino ou F/M): ").strip().lower()
+            if sexo_input in ['f', 'feminino']:
+                sexo_num = 0
+                break
+            elif sexo_input in ['m', 'masculino']:
+                sexo_num = 1
+                break
+            else:
+                print("⛔ Entrada inválida. Digite 'Feminino' ou 'Masculino'.")
+
+        # Função para validar entradas numéricas (idade,glicose,pressão_arterial,espessura_pele,insulina,imc)
+        def ler_float(label, min_val=None, max_val=None):
+            while True:
+                try:
+                    valor = float(input(f"{label}: "))
+                    if (min_val is not None and valor < min_val) or (max_val is not None and valor > max_val):
+                        print(f"⛔ Valor fora do intervalo permitido.")
+                    else:
+                        return valor
+                except:
+                    print("⛔ Entrada inválida. Digite um número.")
+
+        idade = ler_float("Idade", 0)
+        glic  = ler_float("Glicose", 1)
+        press = ler_float("Pressão arterial", 1)
+        pele  = ler_float("Espessura da pele", 1)
+        insu  = ler_float("Insulina", 1)
+        imc   = ler_float("IMC", 1)
+
         paciente = np.array([[sexo_num, idade, imc, glic, press, pele, insu]])
         paciente_scaled = scaler.transform(paciente)
 
@@ -82,14 +111,15 @@ while True:
         pred = mlp.predict(paciente_scaled)[0]
 
         print("\n" + "="*50)
-        print("\nRESULTADO:")
-        print(f"Probabilidade de diabetes de {nome}: {prob:.2%}")
-        print("Diagnóstico:", "❌ DIABÉTICO" if pred == 1 else "✅ NÃO DIABÉTICO")
+        print(f"\nRESULTADO DE: {nome}")
+        print(f"PROBABILIDADE DE DIABETES: {prob:.2%}")
+        print("📋 DIAGNÓSTICO:", "❌ DIABÉTICO" if pred == 1 else "✅ NÃO DIABÉTICO")
+        print("="*50)
 
-        print("\n" + "="*50)
         if input("\nDeseja testar outro paciente? (s/n): ").lower() != 's':
-            print("Encerrando sistema.")
-            print("\n" + "="*50)
+            print("\nEncerrando sistema.")
+            print("="*50)
             break
+
     except Exception as e:
         print(f"Erro: {e}. Tente novamente.")

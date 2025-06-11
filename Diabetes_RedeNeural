@@ -9,10 +9,10 @@ from imblearn.over_sampling import SMOTE
 import re
 
 # Carregando os datasets (iguais do trabalho da árvore de classificação)
-train = pd.read_csv('C:\\Users\\rafael.tieppo\\OneDrive - Pharmainox\\Área de Trabalho\\Diabetes_Redes_Neural\\train_diabetes.csv')
-test  = pd.read_csv('C:\\Users\\rafael.tieppo\\OneDrive - Pharmainox\\Área de Trabalho\\Diabetes_Redes_Neural\\test_diabetes.csv')
+train = pd.read_csv('C:\\Users\\rafae\\OneDrive\\Área de Trabalho\\Rafael Tieppo\\Faculdade - Ciencia da Computação\\5º Semestre\\Ciência de Dados\\Diabetes_Redes_Neural\\train_diabetes.csv')
+test  = pd.read_csv('C:\\Users\\rafae\\OneDrive\\Área de Trabalho\\Rafael Tieppo\\Faculdade - Ciencia da Computação\\5º Semestre\\Ciência de Dados\\Diabetes_Redes_Neural\\test_diabetes.csv')
 
-# Substituir colunas com 0 por NaN e depois pela mediana
+# Substituir colunas com 0 por NaN e depois pela mediana (Uma pessoa não pode ter 0 de glicose, imc etc...)
 cols_com_zero = ['GLICOSE','PRESSAO_ARTERIAL','ESPESSURA_PELE','INSULINA','IMC']
 for col in cols_com_zero:
     train[col].replace(0,np.nan,inplace=True)
@@ -21,7 +21,7 @@ for col in cols_com_zero:
     train[col].fillna(med,inplace=True)
     test[col].fillna(med,inplace=True)
 
-# Separar features (X) e target (y)
+# Separar os dados em variáveis preditoras (X) e alvo (y)
 X_train = train.drop(['ID_PACIENTE','NOME','RESULTADO'], axis=1)
 y_train = train['RESULTADO']
 X_test  = test .drop(['ID_PACIENTE','NOME','RESULTADO'], axis=1)
@@ -31,31 +31,34 @@ y_test  = test ['RESULTADO']
 X_train['SEXO'] = X_train['SEXO'].map({'Feminino':0,'Masculino':1})
 X_test ['SEXO'] = X_test ['SEXO'].map({'Feminino':0,'Masculino':1})
 
-# Normalizar com StandardScaler
+# Normalizar com StandardScaler, 
+# transforma os dados para que cada atributo tenha média 0 e desvio padrão 1
+# se não usar ele, pode fazer com que o modelo dê mais importância a variáveis com valores maiores, prejudicando o desempenho.
 scaler = StandardScaler()
 X_train_scaled = scaler.fit_transform(X_train)
 X_test_scaled  = scaler.transform(X_test)
 
-# Aplicar SMOTE para balancear as classes
+# Aplicar SMOTE para balancear as classes, pois quando os dados estão desbalanceados, muito mais diabeticos que não diabeticos, 
+# o modelo tende a aprender a classe predominante, assim o SMOTE cria padrões sintéticos de classe não predominante para igualar as classes 
 smote = SMOTE(random_state=42)
 X_train_res, y_train_res = smote.fit_resample(X_train_scaled, y_train)
 
-#Criando a rede. Melhor configuração que testei, atingiu 79.87% de acurácia
+# Criando a rede. Melhor configuração que testei, atingiu 79.87% de acurácia
 mlp = MLPClassifier(
      solver='adam',
-     activation='relu',  # sigmoid
+     activation='relu',  
      hidden_layer_sizes=(200,200),  # 2 camadas ocultas
      random_state=42,
-     #max_iter=1000,
-     alpha=0.1,
+     alpha=0.1, # evita overfitting
      tol=1e-8,
-     early_stopping=True,
+     early_stopping=True, # se a validação parar de melhorar ele para o treinamento da rede
  )
 
+# Treino o modelo com os dados balanceados
 print("\nTreinando a Rede MLP...")
 mlp.fit(X_train_res, y_train_res)
 
-# Avaliação
+# Avaliação na base teste
 y_pred = mlp.predict(X_test_scaled)
 print(f"\nAcurácia na base de teste: {accuracy_score(y_test, y_pred):.2%}")
 
@@ -104,12 +107,15 @@ while True:
         insu  = ler_float("Insulina", 1)
         imc   = ler_float("IMC", 1)
 
+        # Crio o vetor de entrada do paciente
         paciente = np.array([[sexo_num, idade, imc, glic, press, pele, insu]])
         paciente_scaled = scaler.transform(paciente)
 
+        # Predição com a probabilidade 
         prob = mlp.predict_proba(paciente_scaled)[0][1]
         pred = mlp.predict(paciente_scaled)[0]
 
+        # Saída
         print("\n" + "="*50)
         print(f"\nRESULTADO DE: {nome}")
         print(f"PROBABILIDADE DE DIABETES: {prob:.2%}")

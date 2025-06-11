@@ -1,4 +1,4 @@
-🧠 Preditor de Risco de Diabetes com Redes Neurais (MLP)
+# 🧠 Preditor de Risco de Diabetes com Redes Neurais (MLP)
 Este projeto aplica técnicas de Ciência de Dados e Inteligência Artificial para prever o risco de um paciente desenvolver diabetes tipo 2, utilizando dados clínicos coletados rotineiramente. A proposta surgiu como parte de um trabalho acadêmico apresentado no TechDay da Faculdade e busca demonstrar, de forma prática, como uma Rede Neural Artificial pode apoiar o diagnóstico precoce e a prevenção da doença.
 
 📊 Sobre o Dataset

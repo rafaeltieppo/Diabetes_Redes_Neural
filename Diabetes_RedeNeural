@@ -8,7 +8,6 @@ from sklearn.metrics import accuracy_score
 from imblearn.over_sampling import SMOTE
 import re
 
-# Carregando os datasets (iguais do trabalho da árvore de classificação)
 train = pd.read_csv('C:\\Users\\rafae\\OneDrive\\Área de Trabalho\\Rafael Tieppo\\Faculdade - Ciencia da Computação\\5º Semestre\\Ciência de Dados\\Diabetes_Redes_Neural\\train_diabetes.csv')
 test  = pd.read_csv('C:\\Users\\rafae\\OneDrive\\Área de Trabalho\\Rafael Tieppo\\Faculdade - Ciencia da Computação\\5º Semestre\\Ciência de Dados\\Diabetes_Redes_Neural\\test_diabetes.csv')
 
@@ -31,19 +30,16 @@ y_test  = test ['RESULTADO']
 X_train['SEXO'] = X_train['SEXO'].map({'Feminino':0,'Masculino':1})
 X_test ['SEXO'] = X_test ['SEXO'].map({'Feminino':0,'Masculino':1})
 
-# Normalizar com StandardScaler, 
-# transforma os dados para que cada atributo tenha média 0 e desvio padrão 1
-# se não usar ele, pode fazer com que o modelo dê mais importância a variáveis com valores maiores, prejudicando o desempenho.
+# Normalizar com StandardScaler
 scaler = StandardScaler()
 X_train_scaled = scaler.fit_transform(X_train)
 X_test_scaled  = scaler.transform(X_test)
 
-# Aplicar SMOTE para balancear as classes, pois quando os dados estão desbalanceados, muito mais diabeticos que não diabeticos, 
-# o modelo tende a aprender a classe predominante, assim o SMOTE cria padrões sintéticos de classe não predominante para igualar as classes 
+# Aplicar SMOTE para balancear as classes
 smote = SMOTE(random_state=42)
 X_train_res, y_train_res = smote.fit_resample(X_train_scaled, y_train)
 
-# Criando a rede. Melhor configuração que testei, atingiu 79.87% de acurácia
+# Criando a rede.
 mlp = MLPClassifier(
      solver='adam',
      activation='relu',  

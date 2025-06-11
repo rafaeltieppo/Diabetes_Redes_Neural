@@ -1,7 +1,7 @@
 # 🧠 Preditor de Risco de Diabetes com Redes Neurais (MLP)
 Este projeto aplica técnicas de Ciência de Dados e Inteligência Artificial para prever o risco de um paciente desenvolver diabetes tipo 2, utilizando dados clínicos coletados rotineiramente. A proposta surgiu como parte de um trabalho acadêmico apresentado no TechDay da Faculdade e busca demonstrar, de forma prática, como uma Rede Neural Artificial pode apoiar o diagnóstico precoce e a prevenção da doença.
 
-##📊 Sobre o Dataset
+## 📊 Sobre o Dataset
 O conjunto de dados utilizado é uma versão tratada do Pima Indians Diabetes Dataset, amplamente utilizado para estudos de classificação na área da saúde. Contém informações médicas básicas de pacientes, como:
 
 Idade
@@ -20,7 +20,7 @@ Insulina
 
 O atributo alvo (RESULTADO) indica se o paciente possui diabetes (1) ou não (0).
 
-##🔎 Etapas do Projeto
+## 🔎 Etapas do Projeto
 Carregamento e limpeza de dados
 
 Remoção de colunas irrelevantes (ID, nome).
